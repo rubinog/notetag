@@ -1,0 +1,609 @@
+/* NoteTag Global Styles */
+
+:root {
+  --bg-base: #f4f4f5;
+  --bg-panel: #ffffff;
+  --bg-panel-hover: #f9f9fa;
+  
+  --border-soft: #e4e4e7;
+  --border-strong: #d4d4d8;
+  
+  --text-main: #27272a;
+  --text-muted: #71717a;
+  
+  --accent-primary: #8a2be2;
+  --accent-glow: rgba(138, 43, 226, 0.15);
+  --accent-secondary: #00ffff;
+  
+  --danger: #ef4444;
+  --success: #10b981;
+  
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'Fira Code', monospace;
+  --font-main: 'Inter', system-ui, sans-serif;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: inherit;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-base);
+  color: var(--text-main);
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  display: flex;
+  height: 100%;
+}
+
+/* Remove tap highlight on all interactive elements */
+a, button, [role="button"], input, textarea, select, label {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.glass-panel {
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border-soft);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Shared utility components */
+.btn {
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--border-strong);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--font-main);
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn:hover {
+  background: var(--bg-panel-hover);
+  border-color: var(--text-muted);
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.btn-primary:hover {
+  background: #9d31ff;
+  border-color: #9d31ff;
+  box-shadow: 0 0 25px var(--accent-glow);
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon:hover {
+  color: var(--text-main);
+  background: var(--bg-panel-hover);
+}
+
+input:not([type="checkbox"]):not([type="radio"]), textarea {
+  font-family: inherit;
+  background: #ffffff;
+  border: 1px solid var(--border-strong);
+  color: var(--text-main);
+  padding: 0.75rem;
+  border-radius: 8px;
+  appearance: none;
+  outline: none;
+  transition: border-color var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+input:focus, textarea:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.25);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn var(--transition-fast);
+}
+
+.modal-content {
+  background: var(--bg-base);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-glass);
+  border-radius: 16px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 500px;
+  animation: slideUp var(--transition-fast);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Markdown Content Styles */
+.markdown-body {
+  font-family: var(--font-main);
+  line-height: 1.6;
+  color: var(--text-main);
+}
+
+.markdown-body ul, .markdown-body ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+}
+.markdown-body p { margin-bottom: 1em; }
+.markdown-body a { color: var(--accent-primary); text-decoration: none; }
+.markdown-body a:hover { text-decoration: underline; }
+.markdown-body code {
+  font-family: var(--font-mono);
+  background: var(--bg-panel);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.markdown-body pre {
+  background: #f8fafc;
+  padding: 1rem;
+  padding-top: 2.25rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  border: 1px solid var(--border-soft);
+  position: relative;
+  font-size: 0.95rem;
+}
+.markdown-body .code-block-wrapper {
+  position: relative;
+  margin: 1.25rem 0;
+}
+.markdown-body .code-lang-label {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: var(--border-soft);
+  color: var(--text-muted);
+  padding: 0.2rem 0.6rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  border-bottom-left-radius: 6px;
+  border-top-right-radius: 6px;
+  user-select: none;
+  font-family: var(--font-main);
+  pointer-events: none;
+  letter-spacing: 0.05em;
+}
+.markdown-body pre code {
+  background: transparent;
+  padding: 0;
+}
+.markdown-body blockquote {
+  border-left: 4px solid var(--accent-primary);
+  padding-left: 1rem;
+  color: var(--text-muted);
+  margin-left: 0;
+}
+
+/* Task lists styling */
+.markdown-body ul.contains-task-list {
+  padding-left: 0.25rem;
+}
+.markdown-body li.task-list-item {
+  list-style-type: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+.markdown-body .task-list-item-checkbox {
+  margin: 0 !important;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.markdown-body li.task-list-item:has(.task-list-item-checkbox:checked) {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+input[type="checkbox"], input[type="radio"] {
+  accent-color: var(--accent-primary);
+  cursor: pointer;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+}
+
+/* Hashtag styling */
+.hashtag {
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+/* Highlight animation for linked notes */
+.note-card-container:target {
+  animation: highlight-pulse 2s ease-out;
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 15px var(--accent-glow) !important;
+}
+
+@keyframes highlight-pulse {
+  0% { transform: scale(1); }
+  5% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+/* --- Layout --- */
+.app-container {
+  display: flex;
+  height: 100dvh;
+  width: 100%;
+  background: var(--bg-base);
+  overflow: hidden;
+}
+
+.mobile-header {
+  display: none;
+}
+
+.sidebar-container {
+  display: flex;
+  height: 100%;
+  z-index: 100;
+}
+
+.feed-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.mobile-close-btn {
+  display: none !important;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+/* Floating Action Button (hidden on desktop) */
+.fab-btn {
+  display: none;
+}
+
+/* Feed main wrapper (for padding overrides on mobile) */
+.feed-main-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--bg-base);
+  padding: 2rem;
+  scroll-behavior: smooth;
+}
+
+/* Focus mode composer */
+.focus-composer {
+  position: fixed;
+  top: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 900px;
+  height: 90%;
+  z-index: 100;
+  background: var(--bg-panel);
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: var(--shadow-glass);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===================== */
+/* === MOBILE STYLES === */
+/* ===================== */
+
+@media (max-width: 768px) {
+  /* Use dynamic viewport height for app container */
+  .app-container {
+    flex-direction: column;
+    height: 100dvh;
+  }
+
+  /* Sticky header with safe area */
+  .mobile-header {
+    display: flex;
+    padding: 0.75rem 1rem;
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-soft);
+    align-items: center;
+    gap: 1rem;
+    z-index: 20;
+    flex-shrink: 0;
+    min-height: 56px;
+    position: sticky;
+    top: 0;
+  }
+
+  /* Feed fills remaining space */
+  .feed-container {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    padding-bottom: max(5rem, calc(env(safe-area-inset-bottom) + 4.5rem));
+  }
+
+  /* Reduce feed padding on mobile */
+  .feed-main-wrapper {
+    padding: 1rem !important;
+  }
+
+  /* Sidebar: full-height drawer from left */
+  .sidebar-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100dvh;
+    width: min(88vw, 340px);
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 200;
+  }
+
+  .sidebar-container.open {
+    transform: translateX(0);
+  }
+
+  /* Sidebar inner panel takes full width of container */
+  .sidebar-panel {
+    width: 100% !important;
+  }
+
+  /* Backdrop behind sidebar */
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+  }
+
+  .glass-panel {
+    border-radius: 0 !important;
+    border-right: none !important;
+  }
+
+  .mobile-close-btn {
+    display: flex !important;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Prevent iOS zoom on input focus (requires font-size >= 16px) */
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* Touch-friendly button sizes (44px minimum tap target) */
+  .btn {
+    min-height: 44px;
+    padding: 0.6rem 1.1rem;
+  }
+
+  .btn-icon {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0.6rem;
+  }
+
+  /* Toolbar buttons can be slightly smaller to fit */
+  .toolbar-btn {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0.4rem;
+  }
+
+  /* Bottom sheet modals */
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  .modal-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 1.5rem 1.25rem !important;
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !important;
+    max-height: 92svh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 !important;
+    animation: slideUpSheet 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  /* Drawer handle indicator */
+  .modal-content::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--border-strong);
+    border-radius: 2px;
+    margin: 0 auto 1.25rem;
+  }
+
+  @keyframes slideUpSheet {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  /* Focus mode composer (full screen on mobile) */
+  .focus-composer {
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    border-radius: 0 !important;
+    padding: 1rem !important;
+    padding-top: max(1rem, env(safe-area-inset-top)) !important;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+  }
+
+  /* FAB — Floating Action Button */
+  .fab-btn {
+    display: flex;
+    position: fixed;
+    bottom: max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem));
+    right: 1.25rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 0 0 var(--accent-glow);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    animation: fabIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .fab-btn:active {
+    transform: scale(0.92);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  @keyframes fabIn {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  /* Hide scrollbars on mobile for cleaner look */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Note card spacing */
+  .note-card-container {
+    touch-action: manipulation;
+  }
+}
+
+/* ========================= */
+/* === SHARED COMPONENTS === */
+/* ========================= */
+
+/* Spin animation (sync indicator) */
+.spin-animation { animation: spin 1s linear infinite; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* Tab buttons */
+.tab-button {
+  background: none;
+  border: none;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+  min-height: 44px;
+}
+.tab-button:hover { color: var(--text-main); }
+.tab-button.active {
+  color: var(--accent-primary);
+  border-bottom: 2px solid var(--accent-primary);
+  font-weight: 600;
+}
+
+/* Hover/press scale feedback */
+.hover-scale { transition: transform 0.15s ease; }
+.hover-scale:active { transform: scale(0.97); }
+
+/* PWA install pulse */
+@keyframes pulse-border {
+  0%   { border-color: var(--accent-primary); }
+  50%  { border-color: transparent; }
+  100% { border-color: var(--accent-primary); }
+}
