@@ -1,0 +1,7 @@
+services:
+  notetag:
+    image: ilrubio/notetag:1.0.2
+    container_name: notetag-app
+    ports:
+      - "8080:80"
+    restart: unless-stopped

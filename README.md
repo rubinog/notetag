@@ -8,6 +8,18 @@
   <i>Privacy-first notes with Markdown, threads, and native GitHub sync.</i>
 </p>
 
+<p align="center">
+  <a href="https://hub.docker.com/r/ilrubio/notetag">
+    <img src="https://img.shields.io/docker/pulls/ilrubio/notetag?style=for-the-badge" alt="Docker Pulls" />
+  </a>
+  <a href="https://hub.docker.com/r/ilrubio/notetag/tags">
+    <img src="https://img.shields.io/docker/v/ilrubio/notetag/latest?style=for-the-badge" alt="Latest Docker Tag" />
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/github/license/rubinog/notetag_new?style=for-the-badge" alt="License" />
+  </a>
+</p>
+
 NoteTag is a fast note-taking app inspired by Memos. Data is stored locally in the browser and can be synced to your own private GitHub repository, so you keep full ownership of your notes.
 
 ## Features
@@ -66,19 +78,46 @@ npm run build
 npm run preview
 ```
 
-## Docker
+## Docker Quick Start
 
-Run with Docker Compose:
+Run NoteTag instantly from Docker Hub:
+
+```bash
+docker pull ilrubio/notetag:1.0.2
+docker run -d --name notetag-app -p 8080:80 --restart unless-stopped ilrubio/notetag:1.0.2
+```
+
+App URL: `http://localhost:8080`
+
+Stop and remove container:
+
+```bash
+docker rm -f notetag-app
+```
+
+## Docker Compose
+
+Local build (from source):
 
 ```bash
 docker compose up --build -d
 ```
 
-App URL: `http://localhost:8080`
+Production-style run (from Docker Hub image):
 
-Notes:
-- Multi-stage Docker build (Node -> Nginx).
-- Nginx serves the static app and handles SPA routing.
+```bash
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+```
+
+Multi-stage Docker build (Node -> Nginx).
+Nginx serves static assets and handles SPA routing.
+
+## Docker Hub
+
+- Repository: https://hub.docker.com/r/ilrubio/notetag
+- Recommended stable tag: `1.0.2`
+- Rolling tag: `latest`
 
 ## Configure GitHub Sync
 
