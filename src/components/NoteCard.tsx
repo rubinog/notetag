@@ -7,12 +7,14 @@ import markdownit from 'markdown-it';
 import taskLists from 'markdown-it-task-lists';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github.css';
-import { MoreVertical, Trash2, Edit2, X, Check, Reply, AlertTriangle } from 'lucide-react';
+import { MoreVertical, Trash2, Edit2, X, Check, Reply, AlertTriangle, Maximize2, Minimize2 } from 'lucide-react';
 import { stringifyMarkdown } from '../utils/markdown';
-import { Toolbar, insertTextAtCursor } from './Toolbar';
+import { Toolbar, insertTextAtCursor, handleListContinuationOnEnter } from './Toolbar';
 import { LinkModal } from './LinkModal';
 
 dayjs.extend(relativeTime);
+
+const REACTION_EMOJIS = ['👍', '❤️', '😂', '🎉', '🔥', '🤔'];
 
 function hashtagPlugin(md: any) {
   md.inline.ruler.push('hashtag', (state: any, silent: boolean) => {
@@ -67,8 +69,9 @@ export const NoteCard: React.FC<{
   onUpdate: (n: Note) => void; 
   onDeleteNote: (id: string) => void;
   onCreateComment?: (parentId: string, content: string) => void;
+  onTagClick?: (tag: string) => void;
   isComment?: boolean;
-}> = ({ note, allNotes = [], onUpdate, onDeleteNote, onCreateComment, isComment = false }) => {
+}> = ({ note, allNotes = [], onUpdate, onDeleteNote, onCreateComment, onTagClick, isComment = false }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(note.content);
   const [showMenu, setShowMenu] = useState(false);
@@ -77,6 +80,8 @@ export const NoteCard: React.FC<{
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkTarget, setLinkTarget] = useState<'edit' | 'reply'>('edit');
+  const [isEditFocusMode, setIsEditFocusMode] = useState(false);
+  const [orphanLinkNotice, setOrphanLinkNotice] = useState<string | null>(null);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const replyRef = useRef<HTMLTextAreaElement>(null);
@@ -102,11 +107,42 @@ export const NoteCard: React.FC<{
       frontmatter: newFrontmatter,
       raw: stringifyMarkdown(newFrontmatter, editContent)
     });
+    setIsEditFocusMode(false);
     setIsEditing(false);
   };
 
   const handleContentClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
+
+    const anchorEl = target.closest('a') as HTMLAnchorElement | null;
+    if (anchorEl) {
+      const hrefAttr = (anchorEl.getAttribute('href') || '').trim();
+      const hash = hrefAttr.startsWith('#') ? hrefAttr : (anchorEl.hash || '');
+
+      if (hash.startsWith('#') && hash.length > 1) {
+        const targetId = decodeURIComponent(hash.slice(1));
+        const linkedNoteExists = allNotes.some(n => n.id === targetId);
+        if (!linkedNoteExists) {
+          e.preventDefault();
+          e.stopPropagation();
+          setOrphanLinkNotice('This linked note no longer exists.');
+          setTimeout(() => setOrphanLinkNotice(null), 2800);
+          return;
+        }
+      }
+    }
+
+    const hashtagEl = target.closest('.hashtag') as HTMLElement | null;
+    if (hashtagEl && onTagClick) {
+      const rawTag = (hashtagEl.textContent || '').trim();
+      const normalizedTag = rawTag.startsWith('#') ? rawTag.slice(1) : rawTag;
+      if (normalizedTag) {
+        onTagClick(normalizedTag);
+      }
+      e.preventDefault();
+      return;
+    }
+
     if (target.tagName === 'INPUT' && target.getAttribute('type') === 'checkbox') {
       const isChecked = (target as HTMLInputElement).checked;
       
@@ -141,6 +177,49 @@ export const NoteCard: React.FC<{
         });
       }
     }
+  };
+
+  const handleToggleReaction = (emoji: string) => {
+    const currentReactions = { ...(note.frontmatter.reactions || {}) };
+    const selected = new Set(note.frontmatter.userReactions || []);
+    const alreadySelected = selected.has(emoji);
+
+    if (alreadySelected) {
+      // Toggle off the current reaction.
+      selected.delete(emoji);
+      const nextCount = Math.max(0, (currentReactions[emoji] || 1) - 1);
+      if (nextCount === 0) {
+        delete currentReactions[emoji];
+      } else {
+        currentReactions[emoji] = nextCount;
+      }
+    } else {
+      // Only one reaction at a time: remove previous selections first.
+      for (const previous of selected) {
+        const nextCount = Math.max(0, (currentReactions[previous] || 1) - 1);
+        if (nextCount === 0) {
+          delete currentReactions[previous];
+        } else {
+          currentReactions[previous] = nextCount;
+        }
+      }
+      selected.clear();
+      selected.add(emoji);
+      currentReactions[emoji] = (currentReactions[emoji] || 0) + 1;
+    }
+
+    const newFrontmatter = {
+      ...note.frontmatter,
+      'updated-at': new Date().toISOString(),
+      reactions: currentReactions,
+      userReactions: Array.from(selected)
+    };
+
+    onUpdate({
+      ...note,
+      frontmatter: newFrontmatter,
+      raw: stringifyMarkdown(newFrontmatter, note.content)
+    });
   };
 
   return (
@@ -191,7 +270,13 @@ export const NoteCard: React.FC<{
                 <button 
                   className="btn-icon" 
                   style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--text-main)', padding: '0.6rem 0.75rem', gap: '0.5rem', borderRadius: '6px', fontSize: '0.9rem' }} 
-                  onClick={() => { setIsEditing(true); setShowMenu(false); }}
+                  onClick={() => {
+                    setIsEditing(true);
+                    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches) {
+                      setIsEditFocusMode(true);
+                    }
+                    setShowMenu(false);
+                  }}
                 >
                   <Edit2 size={15} /> Edit
                 </button>
@@ -205,6 +290,37 @@ export const NoteCard: React.FC<{
                 >
                   <Trash2 size={15} /> Delete
                 </button>
+
+                <div style={{ margin: '0.35rem 0.2rem', borderTop: '1px solid var(--border-soft)' }} />
+                <div style={{ padding: '0.35rem 0.55rem 0.25rem', fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  React
+                </div>
+                <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap', padding: '0 0.45rem 0.35rem' }}>
+                  {REACTION_EMOJIS.map(emoji => {
+                    const isActive = (note.frontmatter.userReactions || []).includes(emoji);
+                    return (
+                      <button
+                        key={emoji}
+                        type="button"
+                        className="btn-icon"
+                        style={{
+                          minWidth: '30px',
+                          minHeight: '30px',
+                          padding: '0.2rem',
+                          border: isActive ? '1px solid var(--accent-primary)' : '1px solid var(--border-soft)',
+                          borderRadius: '999px',
+                          background: isActive ? 'var(--accent-glow)' : 'transparent'
+                        }}
+                        onClick={() => {
+                          handleToggleReaction(emoji);
+                          setShowMenu(false);
+                        }}
+                      >
+                        <span style={{ fontSize: '0.95rem', lineHeight: 1 }}>{emoji}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </>
           )}
@@ -216,8 +332,11 @@ export const NoteCard: React.FC<{
         onClose={() => setShowLinkModal(false)} 
         allNotes={allNotes}
         onSelect={(targetNote) => {
-          const fallbackTitle = targetNote.content.split('\n')[0].replace(/^[#*-]\s+/, '').substring(0, 30);
-          const title = targetNote.frontmatter.title || fallbackTitle;
+          const explicitTitle = (targetNote.frontmatter.title || '').trim();
+          const firstLine = targetNote.content.split('\n')[0].replace(/^[#*-]\s+/, '').trim();
+          const maxLen = 50;
+          const fallbackTitle = firstLine.length > maxLen ? `${firstLine.substring(0, maxLen)}...` : firstLine;
+          const title = explicitTitle || fallbackTitle;
           const link = `[${title}](#${targetNote.id})`;
           if (linkTarget === 'edit') {
             handleInsert(link);
@@ -227,22 +346,58 @@ export const NoteCard: React.FC<{
         }}
       />
 
+      {isEditing && isEditFocusMode && <div className="modal-backdrop" onClick={() => setIsEditFocusMode(false)} />}
+
       {isEditing ? (
-        <div id={note.id + "-edit"} style={{ background: 'rgba(0,0,0,0.02)', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-soft)' }}>
+        <div
+          id={note.id + "-edit"}
+          className={isEditFocusMode ? 'focus-composer' : ''}
+          style={isEditFocusMode
+            ? {
+                position: 'fixed',
+                top: '5%',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '90%',
+                maxWidth: '900px',
+                height: '90%',
+                zIndex: 100,
+                background: 'var(--bg-panel)',
+                padding: '2rem',
+                borderRadius: '16px',
+                boxShadow: 'var(--shadow-glass)',
+                display: 'flex',
+                flexDirection: 'column',
+                border: '1px solid var(--border-soft)'
+              }
+            : { background: 'rgba(0,0,0,0.02)', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-soft)' }}
+        >
+          <button
+            className="btn-icon"
+            style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', color: 'var(--text-muted)' }}
+            onClick={() => setIsEditFocusMode(!isEditFocusMode)}
+            title={isEditFocusMode ? 'Exit focus mode' : 'Focus mode'}
+          >
+            {isEditFocusMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+          </button>
           <textarea 
             ref={textareaRef}
-            style={{ width: '100%', minHeight: '100px', background: 'transparent', border: 'none', outline: 'none', resize: 'vertical' }}
+            style={{ width: '100%', minHeight: '100px', flex: isEditFocusMode ? 1 : 'none', background: 'transparent', border: 'none', outline: 'none', resize: 'vertical' }}
             value={editContent}
             onChange={e => setEditContent(e.target.value)}
+            onKeyDown={(e) => {
+              handleListContinuationOnEnter(e, textareaRef.current, setEditContent);
+            }}
           />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', borderTop: '1px solid var(--border-soft)', paddingTop: '0.5rem' }}>
             <Toolbar 
               onInsert={handleInsert} 
               onTagClick={() => handleInsert('#')}
-              onLinkClick={() => { setLinkTarget('edit'); setShowLinkModal(true); }} 
+              onLinkClick={() => { setLinkTarget('edit'); setShowLinkModal(true); }}
+              onEmojiInsert={(emoji) => handleInsert(emoji)}
             />
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button className="btn" onClick={() => setIsEditing(false)}><X size={14}/> Cancel</button>
+              <button className="btn" onClick={() => { setIsEditFocusMode(false); setIsEditing(false); }}><X size={14}/> Cancel</button>
               <button className="btn btn-primary" onClick={handleSave}><Check size={14}/> Save</button>
             </div>
           </div>
@@ -267,6 +422,48 @@ export const NoteCard: React.FC<{
         <>
           <div className="markdown-body" style={{ fontSize: isComment ? '0.9rem' : '1rem' }} onClick={handleContentClick} dangerouslySetInnerHTML={{ __html: md.render(note.content) }} />
 
+          {orphanLinkNotice && (
+            <div
+              style={{
+                marginTop: '0.65rem',
+                padding: '0.55rem 0.75rem',
+                borderRadius: '8px',
+                border: '1px solid rgba(239, 68, 68, 0.35)',
+                background: 'rgba(239, 68, 68, 0.08)',
+                color: 'var(--text-main)',
+                fontSize: '0.85rem'
+              }}
+            >
+              {orphanLinkNotice}
+            </div>
+          )}
+
+          {Object.entries(note.frontmatter.reactions || {}).some(([, count]) => count > 0) && (
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.85rem' }}>
+              {Object.entries(note.frontmatter.reactions || {})
+                .filter(([, count]) => count > 0)
+                .map(([emoji]) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    className="btn"
+                    onClick={() => handleToggleReaction(emoji)}
+                    style={{
+                      padding: '0.2rem 0.55rem',
+                      minHeight: '30px',
+                      borderRadius: '999px',
+                      borderColor: (note.frontmatter.userReactions || []).includes(emoji) ? 'var(--accent-primary)' : 'var(--border-soft)',
+                      background: (note.frontmatter.userReactions || []).includes(emoji) ? 'var(--accent-glow)' : 'var(--bg-base)',
+                      color: 'var(--text-main)',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    <span>{emoji}</span>
+                  </button>
+                ))}
+            </div>
+          )}
+
           {/* Reply Box (Now above comments for better visibility) */}
           {isReplying && (
             <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(0,0,0,0.02)', borderRadius: '8px', border: '1px solid var(--border-soft)' }}>
@@ -276,13 +473,17 @@ export const NoteCard: React.FC<{
                 style={{ width: '100%', minHeight: '60px', background: 'transparent', border: 'none', outline: 'none', resize: 'vertical' }}
                 value={replyContent}
                 onChange={e => setReplyContent(e.target.value)}
+                onKeyDown={(e) => {
+                  handleListContinuationOnEnter(e, replyRef.current, setReplyContent);
+                }}
                 autoFocus
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
                 <Toolbar 
                   onInsert={(pre, suf) => insertTextAtCursor(replyRef.current, pre, suf, setReplyContent)} 
                   onTagClick={() => insertTextAtCursor(replyRef.current, '#', '', setReplyContent)}
-                  onLinkClick={() => { setLinkTarget('reply'); setShowLinkModal(true); }} 
+                  onLinkClick={() => { setLinkTarget('reply'); setShowLinkModal(true); }}
+                  onEmojiInsert={(emoji) => insertTextAtCursor(replyRef.current, emoji, '', setReplyContent)}
                 />
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button className="btn" onClick={() => setIsReplying(false)}>Cancel</button>
@@ -325,6 +526,7 @@ export const NoteCard: React.FC<{
                   onUpdate={onUpdate}
                   onDeleteNote={onDeleteNote}
                   onCreateComment={onCreateComment}
+                  onTagClick={onTagClick}
                   isComment={true}
                 />
               ))}

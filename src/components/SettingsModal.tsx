@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { GitHubCredentials, Note } from '../types';
 import { pullNotes, pushNotes } from '../github';
-import { Settings, RefreshCw, UploadCloud, DownloadCloud, Type, Palette, X, Info, Download } from 'lucide-react';
+import { Settings, RefreshCw, UploadCloud, DownloadCloud, Type, Palette, X, Info, Download, Sun, Moon, Monitor } from 'lucide-react';
 
 interface SettingsModalProps {
   creds: GitHubCredentials | null;
@@ -14,13 +14,15 @@ interface SettingsModalProps {
   setAccentColor: (color: string) => void;
   fontFamily: string;
   setFontFamily: (font: string) => void;
+  theme: 'light' | 'dark' | 'system';
+  setTheme: (theme: 'light' | 'dark' | 'system') => void;
   installPrompt?: any; // BeforeInstallPromptEvent
   onInstallSuccess?: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ 
   creds, onSaveCreds, onClearCreds, onClose, localNotes, onSyncComplete, 
-  accentColor, setAccentColor, fontFamily, setFontFamily,
+  accentColor, setAccentColor, fontFamily, setFontFamily, theme, setTheme,
   installPrompt, onInstallSuccess
 }) => {
   const [token, setToken] = useState(creds?.token || '');
@@ -147,6 +149,61 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
             )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ padding: '1.5rem', background: 'var(--bg-base)', borderRadius: '12px', border: '1px solid var(--border-soft)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--text-main)', fontWeight: '600' }}>
+                  <Palette size={18} style={{ color: 'var(--accent-primary)' }}/> Theme Mode
+                </div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                  <p>Choose light, dark, or follow your device setting:</p>
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => setTheme('light')}
+                    style={{
+                      flex: 1,
+                      justifyContent: 'center',
+                      borderColor: theme === 'light' ? 'var(--accent-primary)' : 'var(--border-strong)',
+                      color: theme === 'light' ? 'var(--accent-primary)' : 'var(--text-main)',
+                      background: theme === 'light' ? 'var(--accent-glow)' : 'transparent'
+                    }}
+                  >
+                    <Sun size={16} /> Light
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => setTheme('dark')}
+                    style={{
+                      flex: 1,
+                      justifyContent: 'center',
+                      borderColor: theme === 'dark' ? 'var(--accent-primary)' : 'var(--border-strong)',
+                      color: theme === 'dark' ? 'var(--accent-primary)' : 'var(--text-main)',
+                      background: theme === 'dark' ? 'var(--accent-glow)' : 'transparent'
+                    }}
+                  >
+                    <Moon size={16} /> Dark
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => setTheme('system')}
+                    style={{
+                      flex: 1,
+                      justifyContent: 'center',
+                      borderColor: theme === 'system' ? 'var(--accent-primary)' : 'var(--border-strong)',
+                      color: theme === 'system' ? 'var(--accent-primary)' : 'var(--text-main)',
+                      background: theme === 'system' ? 'var(--accent-glow)' : 'transparent'
+                    }}
+                  >
+                    <Monitor size={16} /> System
+                  </button>
+                </div>
+              </div>
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div style={{ padding: '1.5rem', background: 'var(--bg-base)', borderRadius: '12px', border: '1px solid var(--border-soft)' }}>

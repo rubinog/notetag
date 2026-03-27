@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Feed } from './components/Feed';
 import { SettingsModal } from './components/SettingsModal';
-import { useNotes, useGitHubCredentials, useFont } from './store';
+import { useNotes, useGitHubCredentials, useFont, useTheme } from './store';
 import { pushSingleNote, deleteSingleNote } from './github';
-import { Menu } from 'lucide-react';
+import { Menu, RefreshCw, CheckCircle, AlertTriangle, Cloud } from 'lucide-react';
 import dayjs from 'dayjs';
 import { v4 as uuidv4 } from 'uuid';
 import type { Note } from './types';
@@ -23,6 +23,7 @@ function App() {
   const { notes, saveNote, deleteNote, setAllNotes } = useNotes();
   const { creds, saveCreds, clearCreds } = useGitHubCredentials();
   const { fontFamily, setFontFamily } = useFont();
+  const { theme, setTheme } = useTheme();
   
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -40,6 +41,32 @@ function App() {
   useEffect(() => {
     document.documentElement.style.setProperty('--font-main', fontFamily);
   }, [fontFamily]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+
+    if (theme !== 'system') {
+      root.setAttribute('data-theme', theme);
+      return;
+    }
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const applySystemTheme = () => {
+      root.setAttribute('data-theme', mediaQuery.matches ? 'dark' : 'light');
+    };
+
+    applySystemTheme();
+
+    const onSystemThemeChange = () => applySystemTheme();
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', onSystemThemeChange);
+      return () => mediaQuery.removeEventListener('change', onSystemThemeChange);
+    }
+
+    mediaQuery.addListener(onSystemThemeChange);
+    return () => mediaQuery.removeListener(onSystemThemeChange);
+  }, [theme]);
 
   // PWA Install Prompt Listener
   useEffect(() => {
@@ -135,6 +162,11 @@ function App() {
     handleSaveNote(newNote);
   };
 
+  const handleTagFilter = (tag: string) => {
+    setFilterDate(null);
+    setSearchQuery(prev => (prev === tag ? '' : tag));
+  };
+
   const filteredNotes = notes
     .filter(n => {
       let matchesDate = true;
@@ -162,8 +194,12 @@ function App() {
           <img src="/logo.png" width={24} height={24} alt="NoteTag" style={{ borderRadius: '6px' }} onError={(e) => e.currentTarget.style.display = 'none'} />
           <h1 style={{ fontSize: '1.2rem', margin: 0, fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>NoteTag</h1>
         </div>
-        {/* Right spacer to keep title centered */}
-        <div style={{ width: 44 }} />
+        <div style={{ width: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {syncStatus === 'syncing' && <span title="Syncing..."><RefreshCw size={18} className="spin-animation" style={{ color: 'var(--text-muted)' }} /></span>}
+          {syncStatus === 'success' && <span title="Saved to GitHub"><CheckCircle size={18} style={{ color: 'var(--accent-primary)' }} /></span>}
+          {syncStatus === 'error' && <span title="Sync error"><AlertTriangle size={18} style={{ color: 'var(--danger)' }} /></span>}
+          {syncStatus === 'idle' && <span title="Saved locally"><Cloud size={18} style={{ color: 'var(--text-muted)', opacity: 0.45 }} /></span>}
+        </div>
       </div>
 
       <div className={`sidebar-container ${isMobileMenuOpen ? 'open' : ''}`}>
@@ -188,6 +224,7 @@ function App() {
           onCreateComment={(parentId, c) => handleCreateNew(c, parentId)}
           onUpdateNote={handleSaveNote}
           onDeleteNote={handleDeleteNote}
+          onTagClick={handleTagFilter}
           searchQuery={searchQuery}
           filterDate={filterDate}
         />
@@ -205,6 +242,8 @@ function App() {
           setAccentColor={setAccentColor}
           fontFamily={fontFamily}
           setFontFamily={setFontFamily}
+          theme={theme}
+          setTheme={setTheme}
           installPrompt={installPrompt}
           onInstallSuccess={() => setInstallPrompt(null)}
         />

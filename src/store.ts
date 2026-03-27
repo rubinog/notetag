@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 
 const STORAGE_KEY = 'notetag_notes';
 const GITHUB_CREDS_KEY = 'notetag_github_creds';
+const THEME_KEY = 'notetag-theme';
 
 export function useNotes() {
   const [notes, setNotes] = useState<Note[]>(() => {
@@ -97,4 +98,20 @@ export function useFont() {
   }, [fontFamily]);
 
   return { fontFamily, setFontFamily };
+}
+
+export function useTheme() {
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === 'dark' || saved === 'light' || saved === 'system') {
+      return saved;
+    }
+    return 'light';
+  });
+
+  useEffect(() => {
+    localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
+
+  return { theme, setTheme };
 }

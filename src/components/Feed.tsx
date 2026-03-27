@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import type { Note } from '../types';
 import { NoteCard } from './NoteCard';
 import { Send, Maximize2, Minimize2, Plus } from 'lucide-react';
-import { Toolbar, insertTextAtCursor } from './Toolbar';
+import { Toolbar, insertTextAtCursor, handleListContinuationOnEnter } from './Toolbar';
 import { LinkModal } from './LinkModal';
 
 interface FeedProps {
@@ -12,12 +12,13 @@ interface FeedProps {
   onCreateComment: (parentId: string, content: string) => void;
   onUpdateNote: (note: Note) => void;
   onDeleteNote: (id: string) => void;
+  onTagClick?: (tag: string) => void;
   searchQuery?: string;
   filterDate?: any; // dayjs group
 }
 
 export const Feed: React.FC<FeedProps> = ({ 
-  notes, allNotes, onCreateNote, onCreateComment, onUpdateNote, onDeleteNote,
+  notes, allNotes, onCreateNote, onCreateComment, onUpdateNote, onDeleteNote, onTagClick,
   searchQuery, filterDate
 }) => {
   const [newContent, setNewContent] = useState('');
@@ -37,6 +38,15 @@ export const Feed: React.FC<FeedProps> = ({
     insertTextAtCursor(textareaRef.current, prefix, suffix, setNewContent);
   };
 
+  const handleComposerFocus = () => {
+    if (isFocusMode || typeof window === 'undefined') return;
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      setIsFocusMode(true);
+      // Keep focus in the textarea after the layout switches to focus mode.
+      setTimeout(() => textareaRef.current?.focus(), 0);
+    }
+  };
+
   const allTags = Array.from(new Set(allNotes.flatMap(n => n.frontmatter.tags || [])));
 
   const composerStyle: React.CSSProperties = isFocusMode 
@@ -53,8 +63,11 @@ export const Feed: React.FC<FeedProps> = ({
         onClose={() => setShowLinkModal(false)} 
         allNotes={allNotes}
         onSelect={(targetNote) => {
-          const fallbackTitle = targetNote.content.split('\n')[0].replace(/^[#*-]\s+/, '').substring(0, 30);
-          const title = targetNote.frontmatter.title || fallbackTitle;
+          const explicitTitle = (targetNote.frontmatter.title || '').trim();
+          const firstLine = targetNote.content.split('\n')[0].replace(/^[#*-]\s+/, '').trim();
+          const maxLen = 50;
+          const fallbackTitle = firstLine.length > maxLen ? `${firstLine.substring(0, maxLen)}...` : firstLine;
+          const title = explicitTitle || fallbackTitle;
           handleInsert(`[${title}](#${targetNote.id})`);
         }}
       />
@@ -70,8 +83,12 @@ export const Feed: React.FC<FeedProps> = ({
             ref={textareaRef}
             placeholder="Any thought... (use #tags for categories)"
             value={newContent}
+            onFocus={handleComposerFocus}
             onChange={(e) => setNewContent(e.target.value)}
             onKeyDown={(e) => {
+              if (handleListContinuationOnEnter(e, textareaRef.current, setNewContent)) {
+                return;
+              }
               if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 handleCreate();
@@ -84,6 +101,7 @@ export const Feed: React.FC<FeedProps> = ({
               onInsert={handleInsert} 
               onTagClick={() => handleInsert('#')} 
               onLinkClick={() => setShowLinkModal(true)}
+              onEmojiInsert={(emoji) => handleInsert(emoji)}
             />
             <button className="btn btn-primary" onClick={handleCreate} style={{ padding: '0.5rem 1.25rem', flexShrink: 0, marginLeft: 'auto' }}>
               Save <Send size={16} style={{ marginLeft: '4px' }} />
@@ -115,6 +133,7 @@ export const Feed: React.FC<FeedProps> = ({
               onUpdate={onUpdateNote} 
               onDeleteNote={onDeleteNote} 
               onCreateComment={onCreateComment}
+              onTagClick={onTagClick}
             />
           ))}
           {notes.filter(n => (filterDate || searchQuery) ? true : !n.frontmatter.parentId).length === 0 && (

@@ -11,6 +11,8 @@ export interface NoteFrontmatter {
   tags: string[];
   title?: string; // Optional title extracted or stored in frontmatter
   parentId?: string; // Used for comments replying to other notes
+  reactions?: Record<string, number>; // Emoji reaction counts
+  userReactions?: string[]; // Reactions selected by this client/user
 }
 
 export interface GitHubCredentials {

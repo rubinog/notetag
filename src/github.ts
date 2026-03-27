@@ -15,7 +15,8 @@ async function fetchFromGitHub(endpoint: string, creds: GitHubCredentials, optio
   });
   
   if (!response.ok) {
-    const error = new Error(`GitHub API Error: ${response.status} ${response.statusText}`);
+    const errorBody = await response.text().catch(() => '');
+    const error = new Error(`GitHub API Error: ${response.status} ${response.statusText}${errorBody ? ` - ${errorBody}` : ''}`);
     (error as any).status = response.status;
     throw error;
   }
@@ -24,6 +25,80 @@ async function fetchFromGitHub(endpoint: string, creds: GitHubCredentials, optio
   if (response.status === 204) return null;
   
   return response.json();
+}
+
+function encodeUtf8ToBase64(content: string): string {
+  return btoa(unescape(encodeURIComponent(content)));
+}
+
+async function getFileSha(creds: GitHubCredentials, fullPath: string): Promise<string | undefined> {
+  try {
+    const fileData = await fetchFromGitHub(`/contents/${fullPath}`, creds);
+    return fileData?.sha;
+  } catch (err: any) {
+    if (err.status === 404) return undefined;
+    throw err;
+  }
+}
+
+async function upsertFileWithRetry(
+  creds: GitHubCredentials,
+  fullPath: string,
+  message: string,
+  rawContent: string,
+  initialSha?: string
+): Promise<void> {
+  const base64Content = encodeUtf8ToBase64(rawContent);
+  let sha = initialSha;
+
+  // First try with the provided SHA (if any), then retry once with a fresh SHA on conflict.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const body: any = {
+      message,
+      content: base64Content
+    };
+    if (sha) body.sha = sha;
+
+    try {
+      await fetchFromGitHub(`/contents/${fullPath}`, creds, {
+        method: 'PUT',
+        body: JSON.stringify(body)
+      });
+      return;
+    } catch (err: any) {
+      if (err.status === 409 && attempt === 0) {
+        sha = await getFileSha(creds, fullPath);
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
+async function deleteFileWithRetry(creds: GitHubCredentials, fullPath: string, message: string): Promise<void> {
+  let sha = await getFileSha(creds, fullPath);
+  if (!sha) return;
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      await fetchFromGitHub(`/contents/${fullPath}`, creds, {
+        method: 'DELETE',
+        body: JSON.stringify({
+          message,
+          sha
+        })
+      });
+      return;
+    } catch (err: any) {
+      if (err.status === 409 && attempt === 0) {
+        sha = await getFileSha(creds, fullPath);
+        if (!sha) return;
+        continue;
+      }
+      if (err.status === 404) return;
+      throw err;
+    }
+  }
 }
 
 /**
@@ -101,22 +176,13 @@ export async function pushNotes(creds: GitHubCredentials, localNotes: Note[]): P
     // Always regenerate the raw file text before push to ensure it matches current frontmatter mapping
     const rawContent = stringifyMarkdown(note.frontmatter, note.content);
     
-    // Convert to base64 safely for UTF-8
-    const base64Content = btoa(unescape(encodeURIComponent(rawContent)));
-
-    const body: any = {
-      message: `Update ${filename} via NoteTag`,
-      content: base64Content
-    };
-
-    if (currentFiles[filename]) {
-      body.sha = currentFiles[filename];
-    }
-
-    await fetchFromGitHub(`/contents/${fullPath}`, creds, {
-      method: 'PUT',
-      body: JSON.stringify(body)
-    });
+    await upsertFileWithRetry(
+      creds,
+      fullPath,
+      `Update ${filename} via NoteTag`,
+      rawContent,
+      currentFiles[filename]
+    );
   }
 }
 
@@ -126,32 +192,15 @@ export async function pushNotes(creds: GitHubCredentials, localNotes: Note[]): P
 export async function pushSingleNote(creds: GitHubCredentials, note: Note): Promise<void> {
   const filename = `${note.id}.md`;
   const fullPath = `notes/${filename}`;
-  
-  let sha: string | undefined;
-  try {
-    const fileData = await fetchFromGitHub(`/contents/${fullPath}`, creds);
-    if (fileData && fileData.sha) {
-      sha = fileData.sha;
-    }
-  } catch (err: any) {
-    if (err.status !== 404) throw err;
-    // 404 is fine, means file doesn't exist yet
-  }
 
   const rawContent = stringifyMarkdown(note.frontmatter, note.content);
-  // Safely encode to base64 taking unicode into account
-  const base64Content = btoa(unescape(encodeURIComponent(rawContent)));
 
-  const body: any = {
-    message: `Auto-sync ${filename} via NoteTag`,
-    content: base64Content
-  };
-  if (sha) body.sha = sha;
-
-  await fetchFromGitHub(`/contents/${fullPath}`, creds, {
-    method: 'PUT',
-    body: JSON.stringify(body)
-  });
+  await upsertFileWithRetry(
+    creds,
+    fullPath,
+    `Auto-sync ${filename} via NoteTag`,
+    rawContent
+  );
 }
 
 /**
@@ -159,19 +208,5 @@ export async function pushSingleNote(creds: GitHubCredentials, note: Note): Prom
  */
 export async function deleteSingleNote(creds: GitHubCredentials, noteId: string): Promise<void> {
   const fullPath = `notes/${noteId}.md`;
-  try {
-    const fileData = await fetchFromGitHub(`/contents/${fullPath}`, creds);
-    if (fileData && fileData.sha) {
-      await fetchFromGitHub(`/contents/${fullPath}`, creds, {
-        method: 'DELETE',
-        body: JSON.stringify({
-          message: `Delete ${noteId}.md via NoteTag`,
-          sha: fileData.sha
-        })
-      });
-    }
-  } catch (err: any) {
-    if (err.status !== 404) throw err;
-    // ignore 404
-  }
+  await deleteFileWithRetry(creds, fullPath, `Delete ${noteId}.md via NoteTag`);
 }

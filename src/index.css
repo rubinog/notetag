@@ -28,6 +28,22 @@
   --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+:root[data-theme='dark'] {
+  --bg-base: #11131a;
+  --bg-panel: #171a23;
+  --bg-panel-hover: #1f2430;
+
+  --border-soft: #2a3140;
+  --border-strong: #384255;
+
+  --text-main: #e8edf5;
+  --text-muted: #9aa6b8;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 20px -6px rgba(0, 0, 0, 0.45), 0 2px 8px -2px rgba(0, 0, 0, 0.35);
+  --shadow-glass: 0 18px 45px -12px rgba(0, 0, 0, 0.55);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -130,7 +146,7 @@ a, button, [role="button"], input, textarea, select, label {
 
 input:not([type="checkbox"]):not([type="radio"]), textarea {
   font-family: inherit;
-  background: #ffffff;
+  background: var(--bg-panel);
   border: 1px solid var(--border-strong);
   color: var(--text-main);
   padding: 0.75rem;
@@ -166,6 +182,8 @@ input:focus, textarea:focus {
   padding: 2rem;
   width: 90%;
   max-width: 500px;
+  max-height: 92vh;
+  overflow-y: auto;
   animation: slideUp var(--transition-fast);
 }
 
@@ -284,6 +302,12 @@ input[type="checkbox"], input[type="radio"] {
 .hashtag {
   font-weight: 600;
   color: var(--accent-primary);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.hashtag:hover {
+  text-decoration: underline;
 }
 
 /* Highlight animation for linked notes */
