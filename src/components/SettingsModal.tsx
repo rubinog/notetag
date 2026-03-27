@@ -127,7 +127,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <Type size={18} style={{ color: 'var(--accent-primary)' }}/> App Overview
                 </div>
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5' }}>
-                  <p><strong>NoteTag v1.0</strong></p>
+                  <p><strong>NoteTag v1.02</strong></p>
                   <p>A Markdown notebook inspired by Memos that keeps your data in your browser or in your personal GitHub cloud, with full traceability.</p>
                 </div>
               </div>
