@@ -16,7 +16,7 @@
     <img src="https://img.shields.io/docker/v/ilrubio/notetag/latest?style=for-the-badge" alt="Latest Docker Tag" />
   </a>
   <a href="LICENSE">
-    <img src="https://img.shields.io/github/license/rubinog/notetag_new?style=for-the-badge" alt="License" />
+    <img src="https://img.shields.io/github/license/rubinog/notetag?style=for-the-badge" alt="License" />
   </a>
 </p>
 
@@ -45,8 +45,8 @@ NoteTag is a fast note-taking app inspired by Memos. Data is stored locally in t
 ### 1) Clone
 
 ```bash
-git clone https://github.com/rubinog/notetag_new.git
-cd notetag_new
+git clone https://github.com/rubinog/notetag.git
+cd notetag
 ```
 
 ### 2) Install dependencies
@@ -165,7 +165,7 @@ This project is open source and available under the **MIT License**.
 
 If you use this code, build upon it, or feature it in a project, I would greatly appreciate it if you could:
 * Keep the original license and copyright notice.
-* Provide a link back to this repository: [NoteTag by rubinog](https://github.com/rubinog/notetag_new).
+* Provide a link back to this repository: [NoteTag by rubinog](https://github.com/rubinog/notetag).
 
 ---
 <p align="center">
