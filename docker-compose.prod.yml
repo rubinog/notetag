@@ -1,6 +1,6 @@
 services:
   notetag:
-    image: ilrubio/notetag:1.0.2
+    image: ilrubio/notetag:1.0.3
     container_name: notetag-app
     ports:
       - "8080:80"

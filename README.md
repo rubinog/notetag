@@ -83,8 +83,8 @@ npm run preview
 Run NoteTag instantly from Docker Hub:
 
 ```bash
-docker pull ilrubio/notetag:1.0.2
-docker run -d --name notetag-app -p 8080:80 --restart unless-stopped ilrubio/notetag:1.0.2
+docker pull ilrubio/notetag:1.0.3
+docker run -d --name notetag-app -p 8080:80 --restart unless-stopped ilrubio/notetag:1.0.3
 ```
 
 App URL: `http://localhost:8080`
@@ -116,7 +116,7 @@ Nginx serves static assets and handles SPA routing.
 ## Docker Hub
 
 - Repository: https://hub.docker.com/r/ilrubio/notetag
-- Recommended stable tag: `1.0.2`
+- Recommended stable tag: `1.0.3`
 - Rolling tag: `latest`
 
 ## Configure GitHub Sync
