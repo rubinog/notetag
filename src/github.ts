@@ -66,7 +66,8 @@ async function upsertFileWithRetry(
       });
       return;
     } catch (err: any) {
-      if (err.status === 409 && attempt === 0) {
+      // Retry on 409 (conflict) or 422 (missing SHA) if it's the first attempt
+      if ((err.status === 409 || err.status === 422) && attempt === 0) {
         sha = await getFileSha(creds, fullPath);
         continue;
       }
