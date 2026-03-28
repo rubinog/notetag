@@ -194,12 +194,16 @@ export async function pushSingleNote(creds: GitHubCredentials, note: Note): Prom
   const fullPath = `notes/${filename}`;
 
   const rawContent = stringifyMarkdown(note.frontmatter, note.content);
+  
+  // Get the current SHA before pushing (needed for PUT requests)
+  const sha = await getFileSha(creds, fullPath);
 
   await upsertFileWithRetry(
     creds,
     fullPath,
     `Auto-sync ${filename} via NoteTag`,
-    rawContent
+    rawContent,
+    sha
   );
 }
 
