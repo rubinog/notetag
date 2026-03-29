@@ -83,11 +83,11 @@ npm run preview
 Run NoteTag instantly from Docker Hub:
 
 ```bash
-docker pull ilrubio/notetag:1.0.3
-docker run -d --name notetag-app -p 8080:80 --restart unless-stopped ilrubio/notetag:1.0.3
+docker pull ilrubio/notetag:latest
+docker run -d --name notetag-app -p 38180:80 --restart unless-stopped ilrubio/notetag:latest
 ```
 
-App URL: `http://localhost:8080`
+App URL: `http://localhost:38180`
 
 Stop and remove container:
 
@@ -96,6 +96,38 @@ docker rm -f notetag-app
 ```
 
 ## Docker Compose
+
+Default host port is `38180` (configurable via `NOTETAG_PORT`).
+
+Copy-paste `docker-compose.yml` (local build):
+
+```yaml
+services:
+  notetag:
+    build: .
+    container_name: notetag-app
+    ports:
+      - "${NOTETAG_PORT:-38180}:80"
+    restart: unless-stopped
+```
+
+Copy-paste `docker-compose.prod.yml` (Docker Hub image):
+
+```yaml
+services:
+  notetag:
+    image: ilrubio/notetag:latest
+    container_name: notetag-app
+    ports:
+      - "${NOTETAG_PORT:-38180}:80"
+    restart: unless-stopped
+```
+
+Override the port (optional):
+
+```bash
+NOTETAG_PORT=40221 docker compose up -d
+```
 
 Local build (from source):
 
@@ -116,8 +148,9 @@ Nginx serves static assets and handles SPA routing.
 ## Docker Hub
 
 - Repository: https://hub.docker.com/r/ilrubio/notetag
-- Recommended stable tag: `1.0.3`
-- Rolling tag: `latest`
+- Release policy: every released version is stable
+- Stable tags: `latest` and version tags (example: `1.0.3`)
+- Nightly/rolling channel: not provided
 
 ## Configure GitHub Sync
 

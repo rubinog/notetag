@@ -3,5 +3,5 @@ services:
     build: .
     container_name: notetag-app
     ports:
-      - "8080:80"
+      - "${NOTETAG_PORT:-38180}:80"
     restart: unless-stopped
